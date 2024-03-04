@@ -322,6 +322,8 @@ SCRAMBLER_LIST = ["Off", "2600Hz", "2700Hz", "2800Hz", "2900Hz", "3000Hz",
                   "3100Hz", "3200Hz", "3300Hz", "3400Hz", "3500Hz"]
 # compander
 COMPANDER_LIST = ["Off", "TX", "RX", "TX/RX"]
+# scan list
+SCANLIST_LX_LIST = ['no', 'yes']
 # rx mode
 RXMODE_LIST = ["Main only", "Dual RX, respond", "Crossband",
                "Dual RX, TX on main"]
@@ -510,6 +512,10 @@ class UVK5RadioCecF4inx(uvk5.UVK5RadioBase):
         for _, rng in bands.items():
             rf.valid_bands.append(
                     (int(rng[0]*1000000), int(rng[1]*1000000)))
+
+        rf.has_scan_lists = True
+        rf.valid_scan_lists = ['L1', 'L2']
+
         return rf
 
     # Convert the raw byte array into a memory object structure
@@ -538,11 +544,22 @@ class UVK5RadioCecF4inx(uvk5.UVK5RadioBase):
         if number < 200:
             comp = list_def(self._memobj.channel_attributes[number].compander,
                             COMPANDER_LIST, 0)
+            # Only L1 and L2 need to be supported here
+            scan_list_L1 = list_def(int(self._memobj.channel_attributes[number].is_scanlist1),  # FIXME: Check conversion
+                            SCANLIST_LX_LIST, 0)
+            scan_list_L2 = list_def(int(self._memobj.channel_attributes[number].is_scanlist2),  # FIXME: Check conversion
+                            SCANLIST_LX_LIST, 0)
         else:
             comp = 0
+            scan_list_L1 = 0
+            scan_list_L2 = 0
+        # Compander
         val = RadioSettingValueList(COMPANDER_LIST, None, comp)
         rs = RadioSetting("compander", "Compander (Compnd)", val)
         mem.extra.append(rs)
+        # Scan lists
+        mem.scan_list_L1 = SCANLIST_LX_LIST[scan_list_L1]
+        mem.scan_list_L2 = SCANLIST_LX_LIST[scan_list_L2]
         return mem
 
     def _set_mem_mode(self, _mem, mode):
@@ -562,6 +579,14 @@ class UVK5RadioCecF4inx(uvk5.UVK5RadioBase):
         if number < 200 and 'compander' in mem.extra:
             self._memobj.channel_attributes[number].compander = (
                 COMPANDER_LIST.index(str(mem.extra['compander'].value)))
+
+        # FIXME: Check again
+        if number < 200 and hasattr(mem, 'scan_list_L1'):
+            self._memobj.channel_attributes[number].is_scanlist1 = (
+                SCANLIST_LX_LIST.index(str(mem.scan_list_L1)))
+        if number < 200 and hasattr(mem, 'scan_list_L2'):
+            self._memobj.channel_attributes[number].is_scanlist2 = (
+                SCANLIST_LX_LIST.index(str(mem.scan_list_L2)))
 
     def set_settings(self, settings):
         _mem = self._memobj

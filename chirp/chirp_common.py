@@ -305,6 +305,10 @@ class Memory:
 
     immutable = []
 
+    # FIXME: Variable number of scan listes
+    scan_list_L1 = 'no'
+    scan_list_L2 = 'no'
+
     # A RadioSettingGroup of additional settings supported by the radio,
     # or an empty list if none
     extra = []
@@ -886,6 +890,10 @@ class RadioFeatures:
         # D-STAR
         "requires_call_lists":  BOOLEAN,
         "has_implicit_calls":   BOOLEAN,
+
+        # Scan lists
+        "has_scan_lists":       BOOLEAN,
+        "valid_scan_lists":     LIST
     }
 
     def __setattr__(self, name, val):
@@ -1008,6 +1016,11 @@ class RadioFeatures:
         self.init("has_implicit_calls", False,
                   "[D-STAR] Indicates that the radio has an implied " +
                   "callsign at the beginning of the master URCALL list")
+
+        self.init("has_scan_lists", False,
+                  "Indicates that the radio supports scan lists")
+        self.init("valid_scan_lists", [],
+                  "Supported scan lists")
 
     def is_a_feature(self, name):
         """Returns True if @name is a valid feature flag name"""

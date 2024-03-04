@@ -89,6 +89,7 @@ DEFAULT_COLUMN_HELP = {
     'tuning_step': _('Frequency granularity in kHz'),
     'skip': _('Scan control (skip, include, priority, etc)'),
     'power': _('Transmit Power'),
+    'scan_lists': _('Scan lists'),
     'comment': _('Human-readable comment (not stored in radio)'),
 }
 
@@ -917,6 +918,7 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
             valid_power_levels = self._features.valid_power_levels
             power_column = ChirpChoiceColumn('power', self._radio,
                                              valid_power_levels)
+        valid_scan_lists = filter_unknowns(self._features.valid_scan_lists)
         defs = [
             ChirpFrequencyColumn('freq', self._radio),
             ChirpMemoryColumn('name', self._radio),
@@ -939,7 +941,13 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
                               label=_('Tuning Step')),
             ChirpChoiceColumn('skip', self._radio,
                               valid_skips),
-            power_column,
+            power_column]
+        if self._features.has_scan_lists:
+            for scan_list in valid_scan_lists:
+                defs += [ChirpChoiceColumn(f'scan_list_{scan_list}', self._radio,
+                                           ['no', 'yes'],  # TODO: improve this
+                                           label=_(f'Scan List {scan_list}'))]
+        defs += [
             ChirpCommentColumn('comment', self._radio),
         ]
         return defs
