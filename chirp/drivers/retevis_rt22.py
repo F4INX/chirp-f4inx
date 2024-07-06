@@ -331,7 +331,6 @@ class RT22Radio(chirp_common.CloneModeRadio):
     VENDOR = "Retevis"
     MODEL = "RT22"
     BAUD_RATE = 9600
-    NEEDS_COMPAT_SERIAL = False
 
     _ranges = [
                (0x0000, 0x0180, 0x10),
@@ -749,4 +748,6 @@ class BFT20(RT22Radio):
     VENDOR = "Baofeng"
     MODEL = "BF-T20"
 
-    _fileid = [b"P330h33", ]
+    _fileid = [b"P330h33",
+               b"P32073" + b"\xF8\xFF",
+               ]

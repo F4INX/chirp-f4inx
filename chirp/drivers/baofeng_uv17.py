@@ -44,7 +44,10 @@ def _get_memory_size(radio):
 def _get_memory_map(radio):
     # Get memory map
     memory_map = []
-    mem_size = _get_memory_size(radio)
+    if radio._magic_memsize:
+        mem_size = _get_memory_size(radio)
+    else:
+        mem_size = radio._radio_memsize
     if mem_size != radio._radio_memsize:
         raise errors.RadioError("Incorrect radio model or model not supported "
                                 "(memory size doesn't match)")
@@ -60,7 +63,9 @@ def _get_memory_map(radio):
 
 def _download(radio):
     """Get the memory map"""
-    baofeng_uv17Pro._do_ident(radio)
+    if not radio._DETECTED_BY:
+        # The GA510v2 (at least) is detected, and thus has already done ident
+        baofeng_uv17Pro._do_ident(radio)
     data = b""
     memory_map = _get_memory_map(radio)
 
@@ -73,6 +78,8 @@ def _download(radio):
     for block_number in radio.BLOCK_ORDER:
         if block_number not in memory_map:
             # Memory block not found.
+            LOG.error('Block %i (0x%x) not in memory map: %s',
+                      block_number, block_number, memory_map)
             raise errors.RadioError('Radio memory is corrupted. ' +
                                     'Fix this by uploading a backup image ' +
                                     'to the radio.')
@@ -145,7 +152,6 @@ class UV17(baofeng_uv17Pro.UV17Pro):
     """Baofeng UV-17"""
     VENDOR = "Baofeng"
     MODEL = "UV-17"
-    NEEDS_COMPAT_SERIAL = False
 
     download_function = _download
     upload_function = _upload
@@ -190,8 +196,7 @@ class UV17(baofeng_uv17Pro.UV17Pro):
     LIST_MODE = ["Name", "Frequency"]
     CHANNELS = 999
 
-    MEM_FORMAT = """
-    #seekto 0x0030;
+    MEM_DEFS = """
     struct channel {
       lbcd rxfreq[4];
       lbcd txfreq[4];
@@ -210,28 +215,10 @@ class UV17(baofeng_uv17Pro.UV17Pro):
          scan:1;
       u8 unknown4;
     };
-
-    struct {
-      struct channel mem[252];
-    } mem1;
-
-    #seek 0x10;
-    struct {
-      struct channel mem[255];
-    } mem2;
-
-    #seek 0x10;
-    struct {
-      struct channel mem[255];
-    } mem3;
-
-    #seek 0x10;
-    struct {
-      struct channel mem[237];
-    } mem4;
-
-    #seekto 0x7000;
-    struct {
+    struct channelname {
+      char name[11];
+    };
+    struct settings {
       u8 powerondistype;
       u8 unknown0[15];
       char boottext1[10];
@@ -262,7 +249,39 @@ class UV17(baofeng_uv17Pro.UV17Pro):
       u8 unknown9:6,
          chbdistype:1,
          chadistype:1;
-    } settings;
+    };
+    struct ani {
+      u8 unknown[5];
+      u8 code[5];
+    };
+    struct pttid {
+      u8 code[5];
+    };
+    """
+
+    MEM_LAYOUT = """
+    #seekto 0x0030;
+    struct {
+      struct channel mem[252];
+    } mem1;
+
+    #seek 0x10;
+    struct {
+      struct channel mem[255];
+    } mem2;
+
+    #seek 0x10;
+    struct {
+      struct channel mem[255];
+    } mem3;
+
+    #seek 0x10;
+    struct {
+      struct channel mem[237];
+    } mem4;
+
+    #seekto 0x7000;
+    struct settings settings;
 
     struct vfo {
       lbcd rxfreq[4];
@@ -290,21 +309,18 @@ class UV17(baofeng_uv17Pro.UV17Pro):
     } vfo;
 
     #seekto 0x4000;
-    struct {
-      char name[11];
-    } names[999];
+    struct channelname names1[372];
+    #seek 0x4;
+    struct channelname names2[372];
+    #seek 0x4;
+    struct channelname names3[255];
 
     #seekto 0x8000;
-    struct {
-      u8 code[5];
-    } pttid[15];
+    struct pttid pttid[15];
 
-    struct {
-      u8 unknown[5];
-      u8 code[5];
-    } ani;
-
+    struct ani ani;
     """
+    MEM_FORMAT = MEM_DEFS + MEM_LAYOUT
 
     def _make_frame(self, cmd, addr, length, data=""):
         """Pack the info in the header format"""
@@ -390,7 +406,7 @@ class UV17(baofeng_uv17Pro.UV17Pro):
 
         return mode, xval, pol
 
-    def get_raw_memory(self, number):
+    def _get_raw_memory(self, number):
         # The flash memory contains page_numbers
         # This is probably to do wear leveling on the memory
         # These numbers are needed, but make the channel memory
@@ -408,9 +424,23 @@ class UV17(baofeng_uv17Pro.UV17Pro):
         _mem = self._memobj.mem1.mem[number]
         return _mem
 
+    def get_raw_memory(self, number):
+        return repr(self._get_raw_memory(number))
+
+    def get_channel_name(self, number):
+        number = number - 1
+        if number >= 744:
+            _name = self._memobj.names3[number - 744]
+            return _name
+        if number >= 372:
+            _name = self._memobj.names2[number - 372]
+            return _name
+        _name = self._memobj.names1[number]
+        return _name
+
     def get_memory(self, number):
-        _mem = self.get_raw_memory(number)
-        _nam = self._memobj.names[number - 1]
+        _mem = self._get_raw_memory(number)
+        _nam = self.get_channel_name(number)
 
         mem = chirp_common.Memory()
         mem.number = number
@@ -440,8 +470,8 @@ class UV17(baofeng_uv17Pro.UV17Pro):
             memtone.set_value(memtone + 0x4000)
 
     def set_memory(self, mem):
-        _mem = self.get_raw_memory(mem.number)
-        _nam = self._memobj.names[mem.number - 1]
+        _mem = self._get_raw_memory(mem.number)
+        _nam = self.get_channel_name(mem.number)
 
         if mem.empty:
             _mem.set_raw(b"\xff" * 16)

@@ -22,6 +22,7 @@ import os
 import platform
 import shutil
 import tempfile
+import textwrap
 import threading
 
 import wx
@@ -50,6 +51,10 @@ INDEX_CHAR = settings.BANNED_NAME_CHARACTERS[0]
 # global is technically too broad, but in reality, it's equivalent for
 # us at the moment, and this is easier.
 EDIT_LOCK = threading.Lock()
+
+
+class ExportFailed(Exception):
+    pass
 
 
 def closes_clipboard(fn):
@@ -534,11 +539,14 @@ class ChirpSettingGrid(wx.Panel):
     def _get_editor_choice(self, setting, value):
         choices = value.get_options()
         self._choices[setting.get_name()] = choices
-        current = choices.index(str(value))
-        return wx.propgrid.EnumProperty(setting.get_shortname(),
-                                        setting.get_name(),
-                                        choices, range(len(choices)),
-                                        current)
+        e = wx.propgrid.EnumProperty(setting.get_shortname(),
+                                     setting.get_name(),
+                                     choices, range(len(choices)))
+        if value.initialized:
+            e.SetValue(choices.index(str(value)))
+        else:
+            e.SetValueToUnspecified()
+        return e
 
     def _get_editor_bool(self, setting, value):
         prop = wx.propgrid.BoolProperty(setting.get_shortname(),
@@ -704,7 +712,7 @@ def temporary_debug_log():
 
 
 @contextlib.contextmanager
-def expose_logs(level, root, label):
+def expose_logs(level, root, label, maxlen=128):
     if not isinstance(root, tuple):
         root = (root,)
 
@@ -717,7 +725,8 @@ def expose_logs(level, root, label):
             lines = list(itertools.chain.from_iterable(x.get_history()
                                                        for x in histories))
             if lines:
-                msg = os.linesep.join(x.getMessage() for x in lines)
+                msg = os.linesep.join(textwrap.shorten(x.getMessage(), maxlen)
+                                      for x in lines)
                 d = wx.MessageDialog(
                     None, str(msg), label,
                     style=wx.OK | wx.ICON_INFORMATION)

@@ -58,6 +58,7 @@ class CSVRadio(chirp_common.FileBackedRadio):
     """A driver for Generic CSV files"""
     VENDOR = "Generic"
     MODEL = "CSV"
+    NEEDS_COMPAT_SERIAL = True
     FILE_EXTENSION = "csv"
     FORMATS = [directory.register_format('CSV', '*.csv')]
 
@@ -230,6 +231,10 @@ class CSVRadio(chirp_common.FileBackedRadio):
 
             try:
                 mem = self._parse_csv_data_line(header, line)
+                if mem is None:
+                    LOG.debug('Line %i did not contain a valid memory',
+                              lineno)
+                    continue
                 if mem.number is None:
                     raise Exception("Invalid Location field" % lineno)
             except Exception as e:
@@ -243,7 +248,6 @@ class CSVRadio(chirp_common.FileBackedRadio):
             good += 1
 
         if not good:
-            LOG.error(self.errors)
             raise errors.InvalidDataError("No channels found")
 
     def save(self, filename=None):
@@ -339,6 +343,9 @@ class CSVRadio(chirp_common.FileBackedRadio):
 
 
 def find_csv_header(filedata):
+    if filedata.startswith('\ufeff') or filedata.startswith('\ufffe'):
+        # Skip BOM
+        filedata = filedata[1:]
     while filedata.startswith('#'):
         filedata = filedata[filedata.find('\n') + 1:]
     return filedata.startswith('Location,')
@@ -447,6 +454,7 @@ class RTCSVRadio(CSVRadio):
         "On":     "S",
         "P Scan": "P",
         "Skip":   "S",
+        "Scan":   "",
         }
 
     TMODE_MAP = {
@@ -459,13 +467,17 @@ class RTCSVRadio(CSVRadio):
         "On":   True,
     }
 
+    MODE_MAP = {
+        'FM Narrow': 'NFM',
+    }
+
     ATTR_MAP = {
         "Channel Number":    (int,   "number"),
         "Receive Frequency": (chirp_common.parse_freq, "freq"),
         "Offset Frequency":  (chirp_common.parse_freq, "offset"),
         "Offset Direction":  (lambda v:
                               RTCSVRadio.DUPLEX_MAP.get(v, v), "duplex"),
-        "Operating Mode":    (str,   "mode"),
+        "Operating Mode":    (lambda v: RTCSVRadio.MODE_MAP.get(v, v), 'mode'),
         "Name":              (str,   "name"),
         "Tone Mode":         (lambda v:
                               RTCSVRadio.TMODE_MAP.get(v, v), "tmode"),
@@ -480,6 +492,10 @@ class RTCSVRadio(CSVRadio):
                               RTCSVRadio.BOOL_MAP.get(v, v), "empty",),
         "Comment":           (str,   "comment"),
         }
+
+    def __init__(self, pipe):
+        self._last_loaded = 0
+        super().__init__(pipe)
 
     def _clean_duplex(self, headers, line, mem):
         if mem.duplex == "split":
@@ -508,6 +524,21 @@ class RTCSVRadio(CSVRadio):
         mem.ctone = mem.rtone
         return mem
 
+    def _clean_number(self, headers, line, mem):
+        if 'Channel Number' not in headers and self.memories:
+            # Some RTSystems software generates this with an empty header name?
+            self._last_loaded += 1
+            mem.number = self._last_loaded
+            LOG.debug('No location column, calculated %i from %r',
+                      mem.number, self.memories[-1])
+        return mem
+
+    def _parse_csv_data_line(self, headers, line):
+        val = get_datum_by_header(headers, line, "Receive Frequency")
+        if not val.strip():
+            return
+        return super()._parse_csv_data_line(headers, line)
+
     @classmethod
     def match_model(cls, filedata, filename):
         """Match files ending in .csv and using RT Systems column names."""
@@ -519,8 +550,13 @@ class RTCSVRadio(CSVRadio):
         except UnicodeDecodeError:
             # CSV files are text
             return False
+
+        try:
+            firstline, rest = filedata.split('\n', 1)
+            firstline_fields = firstline.split(',')
+        except Exception as e:
+            LOG.warning('Failed to detect file as RTCSV: %s', e)
+            return False
+
         return filename.lower().endswith("." + cls.FILE_EXTENSION) and \
-            filedata.startswith("Channel Number,Receive Frequency,"
-                                "Transmit Frequency,Offset Frequency,"
-                                "Offset Direction,Operating Mode,"
-                                "Name,Tone Mode,CTCSS,DCS")
+            'Receive Frequency' in firstline_fields

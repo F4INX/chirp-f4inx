@@ -16,6 +16,7 @@
 | <a name="Alinco_DR135T"></a> Alinco_DR135T | [Implied by Alinco_DR235T](#user-content-Alinco_DR235T) | 12-Dec-2022 | Yes | 0.04% |
 | <a name="Alinco_DR235T"></a> Alinco_DR235T | [@kk7ds](https://github.com/kk7ds) | 12-Dec-2022 | Yes | 0.02% |
 | <a name="Alinco_DR435T"></a> Alinco_DR435T | [Implied by Alinco_DR235T](#user-content-Alinco_DR235T) | 12-Dec-2022 | Yes | 0.02% |
+| <a name="Alinco_DR735T"></a> Alinco_DR735T | [@jacobcalvert](https://github.com/jacobcalvert) | 03-April-2024 | Yes |  |
 | <a name="AnyTone_5888UV"></a> AnyTone_5888UV | [@kk7ds](https://github.com/kk7ds) | 9-Dec-2022 | Yes | 0.14% |
 | <a name="AnyTone_5888UVIII"></a> AnyTone_5888UVIII | [@bschuler42](https://github.com/bschuler42) | 9-Jan-2023 | Yes | 0.04% |
 | <a name="AnyTone_778UV"></a> AnyTone_778UV | [Implied by Retevis_RT95](#user-content-Retevis_RT95) | 13-Nov-2022 | Yes | 0.17% |
@@ -49,6 +50,7 @@
 | <a name="Baofeng_5RX"></a> Baofeng_5RX | [@KC9HI](https://github.com/KC9HI) | 16-Jan-2024 | Yes |  |
 | <a name="Baofeng_BF-1901"></a> Baofeng_BF-1901 | [@cetinajero](https://github.com/cetinajero) | 3-Jul-2023 | Yes |  |
 | <a name="Baofeng_BF-1904"></a> Baofeng_BF-1904 | [@cetinajero](https://github.com/cetinajero) | 3-Jul-2023 | Yes |  |
+| <a name="Baofeng_BF-1909"></a> Baofeng_BF-1909 | [@KC9HI](https://github.com/KC9HI) | 10-May-2024 | Yes |  |
 | <a name="Baofeng_BF-888"></a> Baofeng_BF-888 | [@kk7ds](https://github.com/kk7ds) | 13-Feb-2019 | Yes | **15.53%** |
 | <a name="Baofeng_BF-A58"></a> Baofeng_BF-A58 | [@KC9HI](https://github.com/KC9HI) | 3-Dec-2022 | Yes | **1.46%** |
 | <a name="Baofeng_BF-A58S"></a> Baofeng_BF-A58S | [@KC9HI](https://github.com/KC9HI) | 3-Dec-2022 | Yes | 0.59% |
@@ -60,12 +62,15 @@
 | <a name="Baofeng_BF-T8"></a> Baofeng_BF-T8 | [@KC9HI](https://github.com/KC9HI) | 30-Nov-2022 | Yes | 0.42% |
 | <a name="Baofeng_BF-V8A"></a> Baofeng_BF-V8A | [@KC9HI](https://github.com/KC9HI) | 28-Nov-2022 | Yes | 0.03% |
 | <a name="Baofeng_F-11"></a> Baofeng_F-11 | [Implied by Baofeng_UV-5R](#user-content-Baofeng_UV-5R) | 18-Nov-2022 | Yes | 0.12% |
+| <a name="Baofeng_GM-5RH"></a> Baofeng_GM-5RH | [@KC9HI](https://github.com/KC9HI) | 21-Mar-2024 | Yes |  |
 | <a name="Baofeng_GT-3WP"></a> Baofeng_GT-3WP | [@KC9HI](https://github.com/KC9HI) | 3-Dec-2022 | Yes | 0.43% |
 | <a name="Baofeng_GT-5R"></a> Baofeng_GT-5R | [@KC9HI](https://github.com/KC9HI) | 18-Nov-2022 | Yes | 0.68% |
+| <a name="Baofeng_K5-Plus"></a> Baofeng_K5-Plus |  |  | Yes |  |
 | <a name="Baofeng_UV-13Pro"></a> Baofeng_UV-13Pro | [@vdwel](https://github.com/vdwel) | 21-Feb-2024 | Yes |  |
 | <a name="Baofeng_UV-17"></a> Baofeng_UV-17 | [@vdwel](https://github.com/vdwel) | 27-Nov-2023 | Yes |  |
 | <a name="Baofeng_UV-17Pro"></a> Baofeng_UV-17Pro | [@vdwel](https://github.com/vdwel) | 27-Nov-2023 | Yes |  |
 | <a name="Baofeng_UV-17ProGPS"></a> Baofeng_UV-17ProGPS | [@vdwel](https://github.com/vdwel) | 27-Nov-2023 | Yes |  |
+| <a name="Baofeng_UV-25"></a> Baofeng_UV-25 | [Implied by Baofeng_UV-17Pro](#user-content-Baofeng_UV-17Pro) | 2-Jun-2024 | Yes |  |
 | <a name="Baofeng_UV-3R"></a> Baofeng_UV-3R | [@yarda](https://github.com/yarda) | 26-Sep-2022 | Yes | 0.45% |
 | <a name="Baofeng_UV-5R"></a> Baofeng_UV-5R | [@lekv](https://github.com/lekv) | 23-Oct-2022 | Yes | **28.81%** |
 | <a name="Baofeng_UV-6"></a> Baofeng_UV-6 | [Implied by Baofeng_UV-5R](#user-content-Baofeng_UV-5R) | 18-Nov-2022 | Yes | 0.46% |
@@ -113,6 +118,7 @@
 | <a name="Icom_IC-7100"></a> Icom_IC-7100 | Mike W | 16-Feb-2023 | Yes | 0.06% |
 | <a name="Icom_IC-7200"></a> Icom_IC-7200 | [@kk7ds](https://github.com/kk7ds) | 22-Oct-2022 | Yes |  |
 | <a name="Icom_IC-7300"></a> Icom_IC-7300 | [@kk7ds](https://github.com/kk7ds) | 22-Oct-2022 | Yes | 0.03% |
+| <a name="Icom_IC-7400"></a> Icom_IC-7400 |  |  | Yes |  |
 | <a name="Icom_IC-746"></a> Icom_IC-746 | [Reported working](https://chirp.danplanet.com/issues/10346) | 3-Feb-2023 | Yes |  |
 | <a name="Icom_IC-7610"></a> Icom_IC-7610 | [@kk7ds](https://github.com/kk7ds) | 24-Oct-2022 | Yes | 0.00% |
 | <a name="Icom_IC-910"></a> Icom_IC-910 | [@mfncooper](https://github.com/mfncooper) | 1-Oct-2021 | Yes | 0.00% |
@@ -145,6 +151,7 @@
 | <a name="Jetstream_JT270M"></a> Jetstream_JT270M | [Implied by Jetstream_JT270M](#user-content-Jetstream_JT270M) | 13-Dec-2022 | Yes | 0.01% |
 | <a name="Jetstream_JT270MH"></a> Jetstream_JT270MH | [@kk7ds](https://github.com/kk7ds) | 13-Dec-2022 | Yes | 0.01% |
 | <a name="Jianpai_8800_Plus"></a> Jianpai_8800_Plus | [Implied by Radtel_RT-490](#user-content-Radtel_RT-490) | 11-Nov-2023 | Yes | 0.01% |
+| <a name="KSUN_M6"></a> KSUN_M6 |  |  | Yes |  |
 | <a name="KYD_IP-620"></a> KYD_IP-620 |  |  |  | 0.02% |
 | <a name="KYD_NC-630A"></a> KYD_NC-630A |  |  |  | 0.02% |
 | <a name="Kenwood_HMK"></a> Kenwood_HMK | [Implied by Generic_CSV](#user-content-Generic_CSV) | 4-Dec-2022 |  | 0.00% |
@@ -231,7 +238,7 @@
 | <a name="LUITON_LT-580_VHF"></a> LUITON_LT-580_VHF | [@KC9HI](https://github.com/KC9HI) | 8-Dec-2022 | Yes | 0.01% |
 | <a name="LUITON_LT-588UV"></a> LUITON_LT-588UV | [@KC9HI](https://github.com/KC9HI) | 11-Nov-2022 | Yes | 0.01% |
 | <a name="LUITON_LT-725UV"></a> LUITON_LT-725UV | [@KC9HI](https://github.com/KC9HI) | 11-Dec-2022 | Yes | 0.02% |
-| <a name="Lanchonlh_HG-UV98"></a> Lanchonlh_HG-UV98 |  |  | Yes | 0.00% |
+| <a name="Lanchonlh_HG-UV98"></a> Lanchonlh_HG-UV98 | [Reported working](https://chirp.danplanet.com/issues/11179) | 23-Feb-2024 | Yes | 0.00% |
 | <a name="Leixen_VV-898"></a> Leixen_VV-898 | [Implied by Jetstream_JT270MH](#user-content-Jetstream_JT270MH) | 13-Dec-2022 | Yes | 0.16% |
 | <a name="Leixen_VV-898E"></a> Leixen_VV-898E |  |  | Yes | 0.02% |
 | <a name="Leixen_VV-898E_Dual_Bank"></a> Leixen_VV-898E_Dual_Bank | [Implied by Leixen_VV-898S_Dual_Bank](#user-content-Leixen_VV-898S_Dual_Bank) | 10-Feb-2024 | Yes |  |
@@ -265,21 +272,29 @@
 | <a name="Radioddity_DB25-G"></a> Radioddity_DB25-G | [@KC9HI](https://github.com/KC9HI) | 11-Nov-2022 | Yes | 0.17% |
 | <a name="Radioddity_GA-2S"></a> Radioddity_GA-2S | [@KC9HI](https://github.com/KC9HI) | 4-Dec-2022 | Yes | 0.19% |
 | <a name="Radioddity_GA-510"></a> Radioddity_GA-510 | [@kk7ds](https://github.com/kk7ds) | 21-Oct-2022 | Yes | 0.42% |
+| <a name="Radioddity_GA-510_V2"></a> Radioddity_GA-510_V2 |  |  | Yes |  |
 | <a name="Radioddity_GS-5B"></a> Radioddity_GS-5B | [@lunapiercook](https://github.com/lunapiercook) | 5-Mar-2023 | Yes |  |
 | <a name="Radioddity_R2"></a> Radioddity_R2 | [@KC9HI](https://github.com/KC9HI) | 17-Dec-2022 | Yes | 0.04% |
 | <a name="Radioddity_UV-5G"></a> Radioddity_UV-5G | [@KC9HI](https://github.com/KC9HI) | 18-Nov-2022 | Yes | 0.47% |
+| <a name="Radioddity_UV-5G_Plus"></a> Radioddity_UV-5G_Plus |  |  | Yes |  |
 | <a name="Radioddity_UV-5RX3"></a> Radioddity_UV-5RX3 | [@KC9HI](https://github.com/KC9HI) | 18-Nov-2022 | Yes | 0.90% |
 | <a name="Radioddity_UV-82X3"></a> Radioddity_UV-82X3 | [@KC9HI](https://github.com/KC9HI) | 18-Nov-2022 | Yes | 0.05% |
 | <a name="Radtel_RT-470"></a> Radtel_RT-470 | [@KC9HI](https://github.com/KC9HI) | 2-Apr-2023 | Yes | 0.00% |
 | <a name="Radtel_RT-470L"></a> Radtel_RT-470L | [@KC9HI](https://github.com/KC9HI) | 5-May-2023 | Yes |  |
 | <a name="Radtel_RT-470X"></a> Radtel_RT-470X | [@KC9HI](https://github.com/KC9HI) | 10-Aug-2023 | Yes |  |
 | <a name="Radtel_RT-490"></a> Radtel_RT-490 | [@KC9HI](https://github.com/KC9HI) | 11-Nov-2023 | Yes | 0.08% |
+| <a name="Radtel_RT-495"></a> Radtel_RT-495 | [@KC9HI](https://github.com/KC9HI) | 14-Jun-2024 | Yes |  |
+| <a name="Radtel_RT-630"></a> Radtel_RT-630 | [@KC9HI](https://github.com/KC9HI) | 14-Jun-2024 | Yes |  |
+| <a name="Radtel_RT-730"></a> Radtel_RT-730 | [@KC9HI](https://github.com/KC9HI) | 11-May-2024 | Yes |  |
 | <a name="Radtel_T18"></a> Radtel_T18 | [@KC9HI](https://github.com/KC9HI) | 28-Nov-2022 | Yes | 0.07% |
 | <a name="Retevis_H777S"></a> Retevis_H777S | [@KC9HI](https://github.com/KC9HI) | 22-Dec-2022 | Yes |  |
 | <a name="Retevis_H777_Plus"></a> Retevis_H777_Plus | [@KC9HI](https://github.com/KC9HI) | 4-Dec-2022 | Yes | 0.06% |
+| <a name="Retevis_P2"></a> Retevis_P2 | [@KC9HI](https://github.com/KC9HI) | 15-Jun-2024 | Yes |  |
+| <a name="Retevis_P62"></a> Retevis_P62 | [@KC9HI](https://github.com/KC9HI) | 15-Jun-2024 | Yes |  |
 | <a name="Retevis_RA685"></a> Retevis_RA685 | [@KC9HI](https://github.com/KC9HI) | 19-Nov-2022 | Yes | 0.25% |
 | <a name="Retevis_RA79"></a> Retevis_RA79 | [@KC9HI](https://github.com/KC9HI) | 27-Oct-2023 | Yes |  |
 | <a name="Retevis_RA85"></a> Retevis_RA85 | [@KC9HI](https://github.com/KC9HI) | 19-Nov-2022 | Yes | 0.05% |
+| <a name="Retevis_RA87"></a> Retevis_RA87 | [@KC9HI](https://github.com/KC9HI) | 16-May-2024 | Yes |  |
 | <a name="Retevis_RA89"></a> Retevis_RA89 | [@KC9HI](https://github.com/KC9HI) | 23-Nov-2023 | Yes |  |
 | <a name="Retevis_RB15"></a> Retevis_RB15 | [@KC9HI](https://github.com/KC9HI) | 18-Dec-2022 | Yes | 0.01% |
 | <a name="Retevis_RB17"></a> Retevis_RB17 | [@KC9HI](https://github.com/KC9HI) | 28-Nov-2022 | Yes | 0.02% |
@@ -452,11 +467,11 @@
 | <a name="Zastone_ZT-X6"></a> Zastone_ZT-X6 | [Implied by Retevis_RT22](#user-content-Retevis_RT22) | 9-Dec-2022 | Yes | 0.11% |
 ## Stats
 
-**Drivers:** 449
+**Drivers:** 464
 
-**Tested:** 87% (395/54) (93% of usage stats)
+**Tested:** 87% (406/58) (93% of usage stats)
 
-**Byte clean:** 91% (410/39)
+**Byte clean:** 91% (425/39)
 
 ## Meaning of this testing
 

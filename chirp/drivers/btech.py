@@ -15,8 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from builtins import bytes
-
 import struct
 import logging
 
@@ -270,6 +268,7 @@ KT8900D_fp = b"VC2002"
 KT8900D_fp1 = b"VC8632"
 KT8900D_fp2 = b"VC3402"
 KT8900D_fp3 = b"VC7062"
+KT8900D_fp4 = b"VC3062"
 
 # LUITON LT-588UV
 LT588UV_fp = b"V2G1F4"
@@ -280,6 +279,7 @@ LT588UV_fp1 = b"V2G214"
 KT8R_fp = b"MCB264"
 KT8R_fp1 = b"MCB284"
 KT8R_fp2 = b"MC5264"
+KT8R_fp3 = b"MCB254"
 
 # QYT KT5800 (dual band)
 KT5800_fp = b"VCB222"
@@ -660,7 +660,6 @@ class BTechMobileCommon(chirp_common.CloneModeRadio,
     COLOR_LCD3 = False  # Color HT Radios
     COLOR_LCD4 = False  # Waterproof Mobile Radios
     NAME_LENGTH = 6
-    NEEDS_COMPAT_SERIAL = False
     UPLOAD_MEM_SIZE = 0X3100
     _power_levels = [chirp_common.PowerLevel("High", watts=25),
                      chirp_common.PowerLevel("Low", watts=10)]
@@ -4097,7 +4096,7 @@ class KT8900D(BTechColor):
     _vhf_range = (136000000, 175000000)
     _uhf_range = (400000000, 481000000)
     _magic = MSTRING_KT8900D
-    _fileid = [KT8900D_fp3, KT8900D_fp2, KT8900D_fp1, KT8900D_fp]
+    _fileid = [KT8900D_fp4, KT8900D_fp3, KT8900D_fp2, KT8900D_fp1, KT8900D_fp]
 
     # Clones
     ALIASES = [OTGRadioV1]
@@ -5045,7 +5044,7 @@ class KT8R(QYTColorHT):
     _uhf_range = (400000000, 481000000)
     _350_range = (350000000, 391000000)
     _magic = MSTRING_KT8R
-    _fileid = [KT8R_fp2, KT8R_fp1, KT8R_fp]
+    _fileid = [KT8R_fp2, KT8R_fp1, KT8R_fp, KT8R_fp3]
     _power_levels = [chirp_common.PowerLevel("High", watts=5),
                      chirp_common.PowerLevel("Low", watts=1)]
 

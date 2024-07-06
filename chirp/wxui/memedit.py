@@ -41,6 +41,57 @@ CONF = config.get()
 WX_GTK = 'gtk' in wx.version().lower()
 
 
+class ChirpGridTable(wx.grid.GridStringTable):
+    def __init__(self, features, num_cols):
+        self._features = features
+        num_rows = (self._features.memory_bounds[1] -
+                    self._features.memory_bounds[0] +
+                    len(self._features.valid_special_chans) + 1)
+        super().__init__(num_rows, num_cols)
+        self._rowmap = {x: x for x in range(0, self.GetRowsCount())}
+        self._rowmap_rev = {v: k for k, v in self._rowmap.items()}
+
+    @property
+    def rowmap(self):
+        return self._rowmap
+
+    @property
+    def rowmap_rev(self):
+        return self._rowmap_rev
+
+    def sort_via(self, col, asc=True):
+        # We sort the current values for the requested column and generate
+        # a mapping of "view row" to "real row" from that ordering. The mapping
+        # is used to translate get/set requests to the appropriate row in the
+        # underlying data store.
+        # The list of values we actually sort is a tuple of:
+        #   (empty, value, location)
+        # Where the empty flag is conditionally negated based on our sort
+        # order. That convoluted scheme makes us always sort empty values at
+        # the bottom instead of the top of the list, which is what a human
+        # will want.
+        if col < 0:
+            self._rowmap = {x: x for x in range(0, self.GetRowsCount())}
+        else:
+            sorted_values = sorted((
+                (asc != bool(
+                    super(ChirpGridTable, self).GetValue(
+                        realrow, col).strip()),
+                 super(ChirpGridTable, self).GetValue(realrow, col),
+                 realrow)
+                for realrow in range(0, self.GetRowsCount())),
+                reverse=not asc)
+            self._rowmap = dict((i, mapping[-1])
+                                for i, mapping in enumerate(sorted_values))
+        self._rowmap_rev = {v: k for k, v in self._rowmap.items()}
+
+    def GetValue(self, row, col):
+        return super().GetValue(self._rowmap[row], col)
+
+    def SetValue(self, row, col, value):
+        return super().SetValue(self._rowmap[row], col, value)
+
+
 class ChirpMemoryGrid(wx.grid.Grid, glr.GridWithLabelRenderersMixin):
     def __init__(self, *a, **k):
         wx.grid.Grid.__init__(self, *a, **k)
@@ -79,6 +130,7 @@ DEFAULT_COLUMN_HELP = {
     'tmode': _('Tone squelch mode'),
     'rtone': _('Transmit tone'),
     'ctone': _('Transmit/receive tone for TSQL mode, else receive tone'),
+    'mode': _('Transmit/receive modulation (FM, AM, SSB, etc)'),
     'dtcs': _('Transmit/receive DTCS code for DTCS mode, else transmit code'),
     'rx_dtcs': _('Receive DTCS code'),
     'dtcs_polarity': _('TX-RX DTCS polarity (normal or reversed)'),
@@ -677,11 +729,11 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
         self.bandplan = bandplan.BandPlans(CONF)
 
         self._grid = ChirpMemoryGrid(self)
-        self._grid.CreateGrid(
-            self._features.memory_bounds[1] - self._features.memory_bounds[0] +
-            len(self._features.valid_special_chans) + 1,
-            len(self._col_defs))
-        self._grid.SetSelectionMode(wx.grid.Grid.SelectRows)
+        self._table = ChirpGridTable(self._features, len(self._col_defs))
+        # AssignTable added in wxPython 4.1, so use the older interface for
+        # earlier version support (i.e. Ubuntu Jammy)
+        self._grid.SetTable(self._table, takeOwnership=True,
+                            selmode=wx.grid.Grid.SelectRows)
         self._grid.DisableDragRowSize()
         self._grid.EnableDragCell()
         self._grid.SetFocus()
@@ -698,6 +750,8 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
         self._variable_font = self._grid.GetDefaultCellFont()
         self.update_font(False)
 
+        self._grid.Bind(wx.grid.EVT_GRID_COL_SORT,
+                        self._sort_column)
         self._grid.Bind(wx.grid.EVT_GRID_CELL_CHANGING,
                         self._memory_edited)
         self._grid.Bind(wx.grid.EVT_GRID_CELL_CHANGED,
@@ -715,10 +769,16 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
         row_labels.Bind(wx.EVT_MOTION, self._rowheader_mouseover)
         col_labels = self._grid.GetGridColLabelWindow()
         col_labels.Bind(wx.EVT_MOTION, self._colheader_mouseover)
+        corner_label = self._grid.GetGridCornerLabelWindow()
+        corner_label.Bind(wx.EVT_LEFT_DOWN, self._sort_column)
         self._dragging_rows = None
 
         self._dc = wx.ScreenDC()
         self.set_cell_attrs()
+
+    @property
+    def is_sorted(self):
+        return self._grid.GetSortingColumn() != wx.NOT_FOUND
 
     def _gtk_short_circuit_edit_copy(self, event):
         # wxGTK is broken and does not direct Ctrl-C to the menu items
@@ -828,7 +888,11 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
             if not col_def.valid:
                 self._grid.HideCol(col)
             else:
-                self._grid.SetColLabelValue(col, col_def.label)
+                label = col_def.label
+                if self._grid.GetSortingColumn() == col:
+                    asc = self._grid.IsSortOrderAscending()
+                    label += ' ' + (asc and '▲' or '▼')
+                self._grid.SetColLabelValue(col, label)
                 attr = wx.grid.GridCellAttr()
                 attr.SetEditor(col_def.get_editor())
                 self._grid.SetColAttr(col, attr)
@@ -960,12 +1024,15 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
 
     def mem2row(self, number):
         if isinstance(number, str):
-            return self._special_rows[number]
-        if number in self._special_numbers:
-            return self._special_rows[self._special_numbers[number]]
-        return number - self._features.memory_bounds[0]
+            row = self._special_rows[number]
+        elif number in self._special_numbers:
+            row = self._special_rows[self._special_numbers[number]]
+        else:
+            row = number - self._features.memory_bounds[0]
+        return self._table.rowmap_rev[row]
 
     def row2mem(self, row):
+        row = self._table.rowmap[row]
         if row in self._special_rows.values():
             row2number = {v: k for k, v in self._special_rows.items()}
             return row2number[row]
@@ -1186,14 +1253,13 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
         lower, upper = self._features.memory_bounds
 
         def setlabel(row, number):
+            row = self.mem2row(number)
             self._grid.SetRowLabelValue(row, '%s' % number)
 
         # Build our row label renderers so we can set colors to
         # indicate success or failure
         self._row_label_renderers = []
-        for row, _num in enumerate(
-                range(lower,
-                      upper + len(self._features.valid_special_chans) + 1)):
+        for row in range(0, self._grid.GetNumberRows()):
             self._row_label_renderers.append(ChirpRowLabelRenderer())
             self._grid.SetRowLabelRenderer(row, self._row_label_renderers[-1])
 
@@ -1250,9 +1316,16 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
                 mem.offset = want_offset
 
         if defaults.step_khz in features.valid_tuning_steps:
-            LOG.debug(
-                'Chose default step %s from bandplan' % defaults.step_khz)
             want_tuning_step = defaults.step_khz
+            if mem.freq % (want_tuning_step * 1000):
+                want_tuning_step = chirp_common.required_step(mem.freq)
+                LOG.debug('Bandplan step %s not suitable for %s, choosing %s',
+                          defaults.step_khz,
+                          chirp_common.format_freq(mem.freq),
+                          want_tuning_step)
+            else:
+                LOG.debug(
+                    'Chose default step %s from bandplan' % defaults.step_khz)
         else:
             want_tuning_step = 5.0
             try:
@@ -1357,6 +1430,22 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
                 return False
             mem.duplex = duplex
         return True
+
+    def _sort_column(self, event):
+        if isinstance(event, wx.grid.GridEvent):
+            col = event.GetCol()
+            cur = self._grid.GetSortingColumn()
+            asc = not self._grid.IsSortOrderAscending() if col == cur else True
+        else:
+            col = -1
+            asc = True
+            self._grid.SetSortingColumn(wx.NOT_FOUND, True)
+        LOG.debug('Sorting col %s asc %s', col, asc)
+        self._table.sort_via(col, asc)
+        self.refresh()
+        # This needs to be called after we're done here so that the grid's
+        # sort/asc attributes are updated
+        wx.CallAfter(self.set_cell_attrs)
 
     @common.error_proof()
     def _memory_edited(self, event):
@@ -1673,7 +1762,7 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
         delete_menu.Append(del_shift_item)
 
         # Only offer sort if a contiguous group of non-empty, non-special
-        # memories is selected
+        # memories is selected and we're not sorted by column
         empty_selected = any([self._memory_cache[r].empty
                               for r in selected_rows])
         used_selected = sum([0 if self._memory_cache[r].empty else 1
@@ -1684,6 +1773,7 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
             selected_rows[-1] - selected_rows[0] == len(selected_rows) - 1)
         can_sort = (len(selected_rows) > 1 and contig_selected and
                     not empty_selected and not special_selected and
+                    not self.is_sorted and
                     self.editable)
         sort_menu = wx.Menu()
         sort_menu_item = menu.AppendSubMenu(
@@ -1724,12 +1814,12 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
         sort_menu.Append(sortdesc_item)
 
         # Don't allow bulk operations on live radios with pending jobs
-        del_block_item.Enable(not self.busy)
-        del_shift_item.Enable(not self.busy)
+        del_block_item.Enable(not self.busy and not self.is_sorted)
+        del_shift_item.Enable(not self.busy and not self.is_sorted)
         insert_item.Enable(not self.busy and self.editable)
         menu.Enable(sort_menu_item.GetId(), not self.busy and can_sort)
 
-        if CONF.get_bool('developer', 'state'):
+        if developer.developer_mode():
             menu.Append(wx.MenuItem(menu, wx.ID_SEPARATOR))
 
             raw_item = wx.MenuItem(menu, wx.NewId(), _('Show Raw Memory'))
@@ -1769,7 +1859,7 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
     @common.error_proof()
     def _mem_insert(self, row, event):
         # Traverse memories downward until we find a hole
-        for i in range(row, self.mem2row(self._features.memory_bounds[1] + 1)):
+        for i in range(row, self.mem2row(self._features.memory_bounds[1]) + 1):
             mem = self._memory_cache[i]
             if mem.empty:
                 LOG.debug("Found empty memory %i at row %i" % (mem.number, i))
@@ -1829,10 +1919,9 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
 
     def cb_copy_getdata(self, cut=False):
         rows = self.get_selected_rows_safe()
-        offset = self._features.memory_bounds[0]
         mems = []
         for row in rows:
-            mem = self.synchronous_get_memory(row + offset)
+            mem = self.synchronous_get_memory(self.row2mem(row))
             mems.append(mem)
         rcid = directory.radio_class_id(self._radio.__class__)
         payload = {'mems': mems,
@@ -1862,6 +1951,9 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
         self.cb_copy_data(self.cb_copy_getdata(cut=cut))
 
     def memedit_import_all(self, source_radio):
+        if self.is_sorted:
+            wx.MessageBox(_('Unable to import while the view is sorted'))
+            return
         source_rf = source_radio.get_features()
         first = max(source_rf.memory_bounds[0],
                     self._features.memory_bounds[0])
@@ -2031,6 +2123,10 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
         return selected
 
     def cb_move(self, direction):
+        if self.is_sorted:
+            wx.MessageBox(
+                _('Move operations are disabled while the view is sorted'))
+            return
         selected = self.get_selected_rows_safe()
         last_row = self._grid.GetNumberRows() - 1
         if direction < 0 and selected[0] == 0:
@@ -2071,7 +2167,10 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
         for mem in to_set:
             self.set_memory(mem)
         cursor_r, cursor_c = self._grid.GetGridCursorCoords()
-        self._grid.SetGridCursor(cursor_r + direction, cursor_c)
+        cursor_r += direction
+        if 0 <= cursor_r <= last_row:
+            # Avoid pushing the cursor past the edges
+            self._grid.SetGridCursor(cursor_r, cursor_c)
 
         wx.PostEvent(self, common.EditorChanged(self.GetId()))
 
@@ -2129,8 +2228,13 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
                 # We don't export specials
                 continue
             if not m.empty:
-                m = import_logic.import_mem(r, self._features, m,
-                                            mem_cls=chirp_common.Memory)
+                try:
+                    m = import_logic.import_mem(r, self._features, m,
+                                                mem_cls=chirp_common.Memory)
+                except import_logic.ImportError as e:
+                    LOG.error('Failed to export %r: %s', m, e)
+                    raise common.ExportFailed(
+                        'Failed to export memory %i: %s' % (m.number, e))
             r.set_memory(m)
         r.save(filename)
         LOG.info('Wrote exported CSV to %s' % filename)

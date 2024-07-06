@@ -238,7 +238,6 @@ class KenwoodD7ProgrammableVFOs(RadioSettingGroup):
 class KenwoodD7Family(chirp_common.LiveRadio):
     VENDOR = "Kenwood"
     MODEL = ""
-    NEEDS_COMPAT_SERIAL = False
     HARDWARE_FLOW = False
 
     _ARG_DELIMITER = " "
@@ -1985,7 +1984,9 @@ class THD7GRadio(KenwoodD7Family):
         "DSPA": {'type': 'list',
                  'values': ("Entire Display", "One Line")},
         "ICO": {'type': 'map',
-                'map': (KenwoodD7Family._COMMON_SETTINGS["ICO"]["map"] +
+                'map': (
+                    KenwoodD7Family.
+                        _COMMON_SETTINGS["ICO"]["map"] +  # type: ignore
                         _APRS_EXTRA)}}
 
     _SETTINGS_MENUS = (
@@ -2125,7 +2126,8 @@ class TMD700Radio(KenwoodD7Family):
         "FUNC": {'type': 'map',
                  'map': (("Mode 1", "1"), ("Mode 2", "2"), ("Mode 3", "3"))},
         "ICO": {'type': 'map',
-                'map': (KenwoodD7Family._COMMON_SETTINGS["ICO"]["map"] +
+                'map': (KenwoodD7Family.
+                        _COMMON_SETTINGS["ICO"]["map"] +  # type: ignore
                         (('Digipeater', '0,F'),) +
                         THD7GRadio._APRS_EXTRA)},
         "MCL 0": _BOOL,

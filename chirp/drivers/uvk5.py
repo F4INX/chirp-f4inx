@@ -429,11 +429,13 @@ def _send_command(serport, data: bytes):
 
 def _receive_reply(serport):
     header = serport.read(4)
-    if len(header) != 4:
+    if not header:
+        raise errors.RadioError("No response from radio")
+    elif len(header) != 4:
         LOG.warning("Header short read: [%s] len=%i",
                     util.hexprint(header), len(header))
         raise errors.RadioError("Header short read")
-    if header[0] != 0xAB or header[1] != 0xCD or header[3] != 0x00:
+    elif header[0] != 0xAB or header[1] != 0xCD or header[3] != 0x00:
         LOG.warning("Bad response header: %s len=%i",
                     util.hexprint(header), len(header))
         raise errors.RadioError("Bad response header")
@@ -653,7 +655,6 @@ class UVK5RadioBase(chirp_common.CloneModeRadio):
     VENDOR = "Quansheng"
     MODEL = "UV-K5"
     BAUD_RATE = 38400
-    NEEDS_COMPAT_SERIAL = False
     _cal_start = 0
     _expanded_limits = False
     _upload_calibration = False
@@ -884,12 +885,12 @@ class UVK5RadioBase(chirp_common.CloneModeRadio):
         mem.extra = RadioSettingGroup("Extra", "extra")
 
         # BCLO
-        is_bclo = bool(_mem.bclo > 0)
+        is_bclo = not mem.empty and bool(_mem.bclo > 0)
         rs = RadioSetting("bclo", "BCLO", RadioSettingValueBoolean(is_bclo))
         mem.extra.append(rs)
 
-        # Frequency reverse - whatever that means, don't see it in the manual
-        is_frev = bool(_mem.freq_reverse > 0)
+        # Frequency reverse - reverse tx/rx frequency
+        is_frev = not mem.empty and bool(_mem.freq_reverse > 0)
         rs = RadioSetting("frev", "FreqRev", RadioSettingValueBoolean(is_frev))
         mem.extra.append(rs)
 
@@ -903,7 +904,7 @@ class UVK5RadioBase(chirp_common.CloneModeRadio):
         mem.extra.append(rs)
 
         # DTMF DECODE
-        is_dtmf = bool(_mem.dtmf_decode > 0)
+        is_dtmf = not mem.empty and bool(_mem.dtmf_decode > 0)
         rs = RadioSetting("dtmfdecode", _("DTMF decode"),
                           RadioSettingValueBoolean(is_dtmf))
         mem.extra.append(rs)
@@ -2065,13 +2066,13 @@ class UVK5Radio(UVK5RadioBase):
     @classmethod
     def k5_approve_firmware(cls, firmware):
         approved_prefixes = ('k5_2.01.', 'app_2.01.', '2.01.',
-                             '1o11', '4.00.')
+                             '1o11', '4.00.', 'k5_4.00.')
         return any(firmware.startswith(x) for x in approved_prefixes)
 
     @classmethod
     def detect_from_serial(cls, pipe):
         firmware = _sayhello(pipe)
-        for rclass in [UVK5Radio] + cls.detected_models():
+        for rclass in cls.detected_models():
             if rclass.k5_approve_firmware(firmware):
                 return rclass
         raise errors.RadioError('Firmware %r not supported' % firmware)

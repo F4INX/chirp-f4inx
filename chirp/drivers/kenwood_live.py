@@ -173,7 +173,6 @@ class KenwoodLiveRadio(chirp_common.LiveRadio):
     BAUD_RATE = 9600
     VENDOR = "Kenwood"
     MODEL = ""
-    NEEDS_COMPAT_SERIAL = False
     # Lots of Kenwood radios actually require RTS, even some of the ones with
     # USB integrated
     HARDWARE_FLOW = True
@@ -799,6 +798,7 @@ class TMD710Radio(KenwoodLiveRadio):
         rf.valid_name_length = 8
         rf.valid_skips = D710_SKIP
         rf.memory_bounds = (0, 999)
+        rf.valid_bands = [(118000000, 524000000), (800000000, 1300000000)]
         return rf
 
     def _cmd_get_memory(self, number):

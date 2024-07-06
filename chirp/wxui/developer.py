@@ -27,12 +27,14 @@ import wx.lib.scrolledpanel
 
 from chirp import bitwise
 from chirp import util
+import chirp.wxui
 from chirp.wxui import common
 from chirp.wxui import report
 
 LOG = logging.getLogger(__name__)
 BrowserChanged, EVT_BROWSER_CHANGED = wx.lib.newevent.NewCommandEvent()
 FROZEN = getattr(sys, 'frozen', False)
+developer_mode = chirp.wxui.developer_mode
 
 
 def simple_diff(a, b, diffsonly=False):
@@ -446,12 +448,47 @@ class ChirpBrowserTreeBook(wx.Treebook):
 
 
 class FakeSerial(serial.SerialBase):
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        self._fake_buf = bytearray()
+
+    @property
+    def in_waiting(self):
+        return len(self._fake_buf)
+
     def write(self, buf):
         LOG.debug('Fake serial write:\n%s' % util.hexprint(buf))
 
-    def read(self, count):
-        LOG.debug('Fake serial read %i' % count)
-        return b''
+    def read(self, count=None):
+        if count is None:
+            count = len(self._fake_buf)
+        data = self._fake_buf[:count]
+        self._fake_buf = self._fake_buf[count:]
+        LOG.debug('Fake serial read %i: %s', count, util.hexprint(data))
+        return data
+
+    def flush(self):
+        LOG.debug('Fake serial flushed')
+
+
+class FakeAT778(FakeSerial):
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        from chirp.drivers import anytone778uv
+        self._emulated = anytone778uv.RetevisRT95vox
+
+    def write(self, buf):
+        if buf == b'PROGRAM':
+            self._fake_buf.extend(buf + b'QX\x06')
+        elif buf == b'\x02':
+            model = list(self._emulated.ALLOWED_RADIO_TYPES.keys())[0]
+            version = self._emulated.ALLOWED_RADIO_TYPES[model][0]
+            self._fake_buf.extend(buf + b'\x49%7.7s\x00%6.6s\x06' % (
+                model.encode().ljust(7, b'\x00'),
+                version.encode().ljust(6, b'\x00')))
+        else:
+            raise Exception('Full clone not implemented')
+        super().write(buf)
 
 
 class FakeEchoSerial(FakeSerial):
@@ -480,7 +517,7 @@ class IssueModuleLoader:
 
     def get_attachments_from_issue(self, issue):
         r = self.session.get(
-            'https://chirp.danplanet.com/issues/%i.json' % issue,
+            'https://chirpmyradio.com/issues/%i.json' % issue,
             params={'include': 'attachments'})
         LOG.debug('Fetched attachments for issue %i (status %s)' % (
             issue, r.status_code))
@@ -492,7 +529,7 @@ class IssueModuleLoader:
                 a['filesize'] < (256 * 1024)]
 
     def get_user_is_developer(self, uid):
-        r = self.session.get('https://chirp.danplanet.com/users/%i.json' % uid,
+        r = self.session.get('https://chirpmyradio.com/users/%i.json' % uid,
                              params={'include': 'memberships'})
         LOG.debug('Fetched info for user %i (status %s)',
                   uid, r.status_code)

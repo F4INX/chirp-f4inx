@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from builtins import bytes
 import logging
 import struct
 
@@ -199,7 +198,6 @@ class KenwoodTKx102Radio(chirp_common.CloneModeRadio):
     VENDOR = "Kenwood"
     MODEL = "TK-x102"
     BAUD_RATE = 9600
-    NEEDS_COMPAT_SERIAL = False
 
     _memsize = 0x410
 

@@ -152,7 +152,6 @@ class Puxing777Radio(chirp_common.CloneModeRadio):
     """Puxing PX-777"""
     VENDOR = "Puxing"
     MODEL = "PX-777"
-    NEEDS_COMPAT_SERIAL = False
 
     def sync_in(self):
         self._mmap = puxing_download(self)
@@ -421,6 +420,7 @@ class Puxing2RRadio(chirp_common.CloneModeRadio):
     """Puxing PX-2R"""
     VENDOR = "Puxing"
     MODEL = "PX-2R"
+    NEEDS_COMPAT_SERIAL = True
     _memsize = 0x0FE0
 
     def get_features(self):

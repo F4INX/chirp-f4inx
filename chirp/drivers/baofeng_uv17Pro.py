@@ -21,7 +21,7 @@ from chirp import chirp_common, directory, memmap
 from chirp import bitwise
 from chirp.settings import RadioSetting, \
     RadioSettingValueBoolean, RadioSettingValueList, \
-    InvalidValueError, RadioSettingValueString, \
+    RadioSettingValueString, \
     RadioSettings, RadioSettingGroup
 import struct
 from chirp import errors, util
@@ -31,6 +31,8 @@ LOG = logging.getLogger(__name__)
 # Baofeng UV-17L magic string
 MSTRING_UV17L = b"PROGRAMBFNORMALU"
 MSTRING_UV17PROGPS = b"PROGRAMCOLORPROU"
+# Baofeng GM-5RH magic string
+MSTRING_GM5RH = b"PROGRAMBFGMRS05U"
 
 DTMF_CHARS = "0123456789 *#ABCD"
 STEPS = [2.5, 5.0, 6.25, 10.0, 12.5, 20.0, 25.0, 50.0]
@@ -209,7 +211,6 @@ class UV17Pro(bfc.BaofengCommonHT):
     """Baofeng UV-17Pro"""
     VENDOR = "Baofeng"
     MODEL = "UV-17Pro"
-    NEEDS_COMPAT_SERIAL = False
 
     MEM_STARTS = [0x0000, 0x9000, 0xA000, 0xD000]
     MEM_SIZES = [0x8040, 0x0040, 0x02C0, 0x0040]
@@ -782,10 +783,11 @@ class UV17Pro(bfc.BaofengCommonHT):
         def my_validate(value):
             value = chirp_common.parse_freq(value)
             for band in self.VALID_BANDS:
-                if value > band[0] and value < band[1]:
+                if value >= band[0] and value < band[1]:
                     return chirp_common.format_freq(value)
             msg = ("{0} is not in a valid band.".format(value))
-            raise InvalidValueError(msg)
+            LOG.debug(msg)
+            return chirp_common.format_freq(band[0])  # Default to valid value
 
         def apply_freq(setting, obj):
             value = chirp_common.parse_freq(str(setting.value)) / 10
@@ -1189,11 +1191,14 @@ class UV17Pro(bfc.BaofengCommonHT):
 
         mem.name = str(name).replace('\xFF', ' ').replace('\x00', ' ').rstrip()
 
-    def get_raw_memory(self, number):
+    def _get_raw_memory(self, number):
         return self._memobj.memory[number - 1]
 
+    def get_raw_memory(self, number):
+        return repr(self._get_raw_memory(number))
+
     def get_memory(self, number):
-        _mem = self.get_raw_memory(number)
+        _mem = self._get_raw_memory(number)
 
         mem = chirp_common.Memory()
         mem.number = number
@@ -1203,7 +1208,7 @@ class UV17Pro(bfc.BaofengCommonHT):
         return mem
 
     def unsplit_txfreq(self, mem):
-        _mem = self.get_raw_memory(mem.number)
+        _mem = self._get_raw_memory(mem.number)
         if mem.duplex == "off":
             for i in range(0, 4):
                 _mem.txfreq[i].set_raw(b"\xFF")
@@ -1249,7 +1254,7 @@ class UV17Pro(bfc.BaofengCommonHT):
             _mem.scode = self._scode_offset
 
     def set_memory(self, mem):
-        _mem = self.get_raw_memory(mem.number)
+        _mem = self._get_raw_memory(mem.number)
 
         _mem.set_raw(b"\x00"*16 + b"\xff" * 16)
 
@@ -1261,6 +1266,12 @@ class UV17Pro(bfc.BaofengCommonHT):
         _mem.name = mem.name.ljust(_namelength, '\xFF')
 
         self.set_memory_common(mem, _mem)
+
+
+@directory.register
+class UV25(UV17Pro):
+    VENDOR = "Baofeng"
+    MODEL = "UV-25"
 
 
 @directory.register
@@ -1332,3 +1343,31 @@ class BF5RM(UV17Pro):
             except ValueError:
                 pass
         super().check_set_memory_immutable_policy(existing, new)
+
+
+@directory.register
+class BFK5Plus(BF5RM):
+    VENDOR = "Baofeng"
+    MODEL = "K5-Plus"
+
+
+@directory.register
+class GM5RH(UV17Pro):
+    VENDOR = "Baofeng"
+    MODEL = "GM-5RH"
+
+    VALID_BANDS = [UV17Pro._vhf_range, UV17Pro._vhf2_range, UV17Pro._uhf_range]
+    POWER_LEVELS = [chirp_common.PowerLevel("High", watts=5.00),
+                    chirp_common.PowerLevel("Low", watts=0.50),
+                    chirp_common.PowerLevel("Medium", watts=3.00)]
+    SCODE_LIST = ["%s" % x for x in range(1, 16)]
+    LIST_PW_SAVEMODE = ["Off", "1:1", "2:1", "3:1", "4:1"]
+    _has_workmode_support = True
+
+    _magic = MSTRING_GM5RH
+
+
+@directory.register
+class UV5GPlus(GM5RH):
+    VENDOR = "Radioddity"
+    MODEL = "UV-5G Plus"

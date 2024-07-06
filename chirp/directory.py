@@ -63,8 +63,8 @@ def register(cls):
     DRV_TO_RADIO[ident] = cls
     RADIO_TO_DRV[cls] = ident
 
-    if not hasattr(cls, '_DETECTED_MODEL'):
-        cls._DETECTED_MODEL = False
+    if not hasattr(cls, '_DETECTED_BY'):
+        cls._DETECTED_BY = None
 
     return cls
 
@@ -81,10 +81,8 @@ def detected_by(manager_class):
     def wrapper(cls):
         assert issubclass(cls, chirp_common.CloneModeRadio)
 
-        cls._DETECTED_MODEL = True
-        if manager_class.DETECTED_MODELS is None:
-            manager_class.DETECTED_MODELS = []
-        manager_class.DETECTED_MODELS.append(cls)
+        cls._DETECTED_BY = manager_class
+        manager_class.detect_model(cls)
         return cls
 
     return wrapper
@@ -183,6 +181,9 @@ def get_radio_by_image(image_file):
                     VENDOR = meta_vendor
                     MODEL = meta_model
                     VARIANT = metadata.get('variant')
+
+                    def __repr__(self):
+                        return repr(self._orig_rclass)
 
                 return DynamicRadioAlias(image_file)
 

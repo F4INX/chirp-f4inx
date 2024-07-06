@@ -422,7 +422,6 @@ class JC8810base(chirp_common.CloneModeRadio):
     VENDOR = "MML"
     MODEL = "JC-8810base"
     BAUD_RATE = 57600
-    NEEDS_COMPAT_SERIAL = False
     BLOCK_SIZE = 0x40
     BLOCK_SIZE_UP = 0x40
 
@@ -847,6 +846,8 @@ class JC8810base(chirp_common.CloneModeRadio):
             unwanted = [0, 5, 7, 9, 10, 11, 12]
         elif self.MODEL in ["A36plus", "A36plus_8w"]:
             unwanted = [0, 5, 7, 9, 10, 11]
+        elif self.MODEL in ["RT-630", "RT-495"]:
+            unwanted = [5, 9, 10, 11, 12]
         else:
             unwanted = []
         SKEY2S_CHOICES = ALL_SKEY_CHOICES.copy()
@@ -878,6 +879,8 @@ class JC8810base(chirp_common.CloneModeRadio):
             unwanted = [0, 5, 7, 8, 10, 11, 12]
         elif self.MODEL in ["A36plus", "A36plus_8w"]:
             unwanted = [0, 5, 7, 8, 11, 12]
+        elif self.MODEL in ["RT-630", "RT-495"]:
+            unwanted = [5, 9, 10, 11, 12]
         else:
             unwanted = []
         SKEY2L_CHOICES = ALL_SKEY_CHOICES.copy()
@@ -909,6 +912,8 @@ class JC8810base(chirp_common.CloneModeRadio):
             unwanted = [0, 5, 7, 8, 9, 10, 11, 12]
         elif self.MODEL in ["A36plus", "A36plus_8w"]:
             unwanted = [0, 5, 7, 8, 11]
+        elif self.MODEL in ["RT-630", "RT-495"]:
+            unwanted = [5, 9, 10, 11, 12]
         else:
             unwanted = []
         SKEY3S_CHOICES = ALL_SKEY_CHOICES.copy()
@@ -926,7 +931,8 @@ class JC8810base(chirp_common.CloneModeRadio):
         rset.set_apply_callback(apply_skey3s_listvalue, _settings.skey3_sp)
         basic.append(rset)
 
-        if self.MODEL in ["HI-8811", "RT-470L", "RT-470X", "RT-470"]:
+        if self.MODEL in ["HI-8811", "RT-470L", "RT-470X", "RT-470", "RT-630",
+                          "RT-495"]:
             # Menu 24: PF3 LONG PRESS (RT-470L)
             def apply_skey3l_listvalue(setting, obj):
                 LOG.debug("Setting value: " + str(setting.value) +
@@ -938,6 +944,8 @@ class JC8810base(chirp_common.CloneModeRadio):
 
             if self.MODEL in ["HI-8811", "RT-470L", "RT-470X", "RT-470"]:
                 unwanted = [8, 9, 10, 11, 12]
+            elif self.MODEL in ["RT-630", "RT-495"]:
+                unwanted = [5, 9, 10, 11, 12]
             else:
                 unwanted = []
             SKEY3L_CHOICES = ALL_SKEY_CHOICES.copy()
@@ -999,7 +1007,7 @@ class JC8810base(chirp_common.CloneModeRadio):
         rset = RadioSetting("ponmsg", "Power On Message", rs)
         basic.append(rset)
 
-        if self.MODEL in ["HI-8811", "RT-470L", "RT-470X"]:
+        if self.MODEL in ["HI-8811", "RT-470L", "RT-470X", "RT-630", "RT-495"]:
             rs = RadioSettingValueList(TAILCODE_LIST,
                                        TAILCODE_LIST[_settings.tailcode])
             rset = RadioSetting("tailcode", "Tail Code", rs)
@@ -1270,7 +1278,9 @@ class RT470Radio(JC8810base):
                          ]
 
     # pcb 2
-    _fingerprint_pcb2 = [b"\x00\x00\x00\x2C\x00\x20\xD8\x04",  # fw v2.11A
+    _fingerprint_pcb2 = [b"\x00\x00\x00\x28\x00\x20\xD4\x04",  # fw v2.00
+                         b"\x00\x00\x00\x2C\x00\x20\xD8\x04",  # fw v2.11A
+                         b"\x00\x00\x00\x36\x00\x20\xDC\x04",  # fw v2.13A
                          ]
 
     _fingerprint = _fingerprint_pcb1 + _fingerprint_pcb2
@@ -1494,3 +1504,54 @@ class AR730Radio(UVA37Radio):
                    (200000000, 260000000),
                    (350000000, 390000000),
                    (400000000, 520000000)]
+
+
+@directory.register
+class RT630Radio(JC8810base):
+    """Radtel RT-630"""
+    VENDOR = "Radtel"
+    MODEL = "RT-630"
+
+    # ==========
+    # Notice to developers:
+    # The RT-630 support in this driver is currently based upon v0.07 firmware.
+    # ==========
+
+    _fingerprint = [b"\x00\x00\x00\x32\x00\x20\xD8\x04",  # fw 0.07
+                    ]
+
+    POWER_LEVELS = [chirp_common.PowerLevel("H", watts=5.00),
+                    chirp_common.PowerLevel("M", watts=4.00),
+                    chirp_common.PowerLevel("L", watts=2.00)]
+
+    VALID_BANDS = [(18000000, 108000000),
+                   (108000000, 136000000),
+                   (136000000, 300000000),
+                   (300000000, 660000000),
+                   (840000000, 1000000000)]
+
+    _ranges = [
+               (0x0000, 0x2000),
+               (0x8000, 0x8040),
+               (0x9000, 0x9040),
+               (0xA000, 0xA140),
+               (0xB000, 0xB2C0),
+               (0xB500, 0xB740)
+               ]
+    _memsize = 0xB740
+
+
+@directory.register
+class RT495Radio(RT630Radio):
+    """Radtel RT-495"""
+    VENDOR = "Radtel"
+    MODEL = "RT-495"
+
+    # ==========
+    # Notice to developers:
+    # The RT-495 support in this driver is currently based upon v0.07 firmware.
+    # ==========
+
+    _fingerprint = [b"\x00\x00\x00\x24\x00\x20\xD0\x04",  # fw 0.06
+                    b"\x00\x00\x00\x32\x00\x20\xD8\x04",  # fw 0.07
+                    ]

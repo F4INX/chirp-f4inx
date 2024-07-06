@@ -18,6 +18,7 @@
 # Example definitions:
 #
 #  bit  foo[8];  /* Eight single bit values                 */
+#  lbit foo[16]; /* Sixteen single-bit values, little-endian*/
 #  u8   foo;     /* Unsigned 8-bit value                    */
 #  u16  foo;     /* Unsigned 16-bit value                   */
 #  ul16 foo;     /* Unsigned 16-bit value (LE)              */
@@ -63,9 +64,6 @@ import logging
 import re
 import warnings
 
-import six
-from builtins import bytes
-
 from chirp import bitwise_grammar
 
 LOG = logging.getLogger(__name__)
@@ -74,20 +72,6 @@ LOG = logging.getLogger(__name__)
 class ParseError(Exception):
     """Indicates an error parsing a definition"""
     pass
-
-
-def byte_to_int(b):
-    if six.PY3 or isinstance(b, int):
-        return b
-    else:
-        return ord(b)
-
-
-def int_to_byte(i):
-    if six.PY3:
-        return bytes([i])
-    else:
-        return chr(i)
 
 
 def string_straight_encode(string):
@@ -106,7 +90,7 @@ def string_straight_encode(string):
     # specific binary values in memory). Ideally we would have
     # written all of chirp with bytes() for these values, but alas.
     # We can get the intended string here by doing bytes([ord(char)]).
-    return bytes(b''.join(int_to_byte(ord(b)) for b in string))
+    return bytes(b''.join(bytes([ord(b)]) for b in string))
 
 
 def string_straight_decode(string):
@@ -124,7 +108,7 @@ def string_straight_decode(string):
     # will detect '\xFF' properly.
     # FIXMEPY3: Remove this and the hack below when drivers convert to
     # bytestrings.
-    return ''.join(chr(byte_to_int(b)) for b in string)
+    return ''.join(chr(b) for b in string)
 
 
 def format_binary(nbits, value, pad=8):
@@ -952,13 +936,13 @@ class Processor:
 
         return bytes
 
-    def do_bitarray(self, i, count):
+    def do_bitarray(self, i, count, bigendian=True):
         if count % 8 != 0:
             raise ValueError("bit array must be divisible by 8.")
 
         class bitDE(bitDataElement):
             _nbits = 1
-            _shift = 8 - i % 8
+            _shift = (8 - i % 8) if bigendian else (i % 8) + 1
 
         return bitDE(self._data, self._offset)
 
@@ -990,6 +974,9 @@ class Processor:
             for i in range(0, count):
                 if dtype == "bit":
                     gen = self.do_bitarray(i, count)
+                    self._offset += int((i+1) % 8 == 0)
+                elif dtype == "lbit":
+                    gen = self.do_bitarray(i, count, bigendian=False)
                     self._offset += int((i+1) % 8 == 0)
                 else:
                     gen = self._types[dtype](self._data, self._offset)

@@ -16,7 +16,6 @@
 
 """FT817 - FT817ND - FT817ND/US management module"""
 
-from builtins import bytes
 from chirp.drivers import yaesu_clone
 from chirp import chirp_common, util, memmap, errors, directory, bitwise
 from chirp.settings import RadioSetting, RadioSettingGroup, \
@@ -37,7 +36,6 @@ class FT817Radio(yaesu_clone.YaesuCloneModeRadio):
     """Yaesu FT-817"""
     BAUD_RATE = 9600
     MODEL = "FT-817"
-    NEEDS_COMPAT_SERIAL = False
     _model = ""
     _US_model = False
 
